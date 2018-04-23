@@ -1,6 +1,6 @@
 # RevBayes 
 
-[![Build Status](https://travis-ci.org/revbayes/revbayes.svg?branch=master)](https://travis-ci.org/revbayes/revbayes)
+*This is a fork of RevBayes for reproducibility of analyses in Faulkner et al. (in prep). It is not being developed or maintained. Unless you have a compelling reason to use this fork, it is recommended that you go to [the main branch](github.com/revbayes/revbayes).*
 
 **RevBayes** -- Bayesian phylogenetic inference using probabilistic graphical models and an interactive language.
 
