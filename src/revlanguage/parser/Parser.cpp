@@ -153,11 +153,13 @@ int RevLanguage::Parser::execute(SyntaxElement* root, Environment &env) const {
         {
             delete( root);
             
-#ifdef RB_MPI
-            MPI_Finalize();
-#endif
             Workspace::userWorkspace().clear();
             Workspace::globalWorkspace().clear();
+            
+#ifdef RB_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Finalize();
+#endif
             
             exit(0);
         }
@@ -361,12 +363,11 @@ void RevLanguage::Parser::setParserMode(ParserMode mode)
  *       signal is set to 2. Any remaining part of the command buffer
  *       is discarded.
  */
-int RevLanguage::Parser::processCommand(std::string& command, Environment* env) {
+int RevLanguage::Parser::processCommand(std::string& command, Environment* env)
+{
 
     // make sure mode is not checking
     this->setParserMode(EXECUTING);
-
-    //    extern Environment* executionEnvironment;
 
     executionEnvironment = env;
 
@@ -425,11 +426,12 @@ int RevLanguage::Parser::processCommand(std::string& command, Environment* env) 
             // Catch a quit request in case it was not caught before
             if (rbException.getExceptionType() == RbException::QUIT)
             {
+                Workspace::userWorkspace().clear();
+                Workspace::globalWorkspace().clear();
+                
 #ifdef RB_MPI
                 MPI_Finalize();
 #endif
-                Workspace::userWorkspace().clear();
-                Workspace::globalWorkspace().clear();
                 
                 exit(0);
             }

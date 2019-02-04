@@ -86,6 +86,13 @@ NodeOrderWeightedConstrainedTreeDistribution::NodeOrderWeightedConstrainedTreeDi
         // otherwise we simply use the same pointer
         value = &base_distribution->getValue();
     }
+    
+    // add the parameters of the base distribution
+    const std::vector<const DagNode*>& pars = base_distribution->getParameters();
+    for (std::vector<const DagNode*>::const_iterator it = pars.begin(); it != pars.end(); ++it)
+    {
+        this->addParameter( *it );
+    }
 
 }
 
@@ -256,6 +263,23 @@ void NodeOrderWeightedConstrainedTreeDistribution::redrawValue( void )
     }
 
 
+}
+
+
+/**
+ * Set the DAG node.
+ */
+void NodeOrderWeightedConstrainedTreeDistribution::setStochasticNode( StochasticNode<Tree> *n )
+{
+    
+    // delegate to base class first
+    TypedDistribution<Tree>::setStochasticNode( n );
+    
+    if ( base_distribution != NULL )
+    {
+        base_distribution->setStochasticNode( n );
+    }
+    
 }
 
 

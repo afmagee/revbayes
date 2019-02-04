@@ -103,10 +103,12 @@
    and other essential services. */
 
 #include "Func_append.h"
+#include "Func_appendVector.h"
 #include "Func_clear.h"
 #include "Func_exists.h"
 #include "Func_getOption.h"
 #include "Func_getwd.h"
+#include "Func_help.h"
 #include "Func_ifelse.h"
 #include "Func_license.h"
 #include "Func_listOptions.h"
@@ -267,10 +269,17 @@ void RevLanguage::Workspace::initializeBasicGlobalWorkspace(void)
         addFunction( new Func_append<RealPos>()             );
         addFunction( new Func_append<RlString>()            );
         addFunction( new Func_append<RlBoolean>()           );
+        addFunction( new Func_appendVector<Integer>()       );
+        addFunction( new Func_appendVector<Real>()          );
+        addFunction( new Func_appendVector<Natural>()       );
+        addFunction( new Func_appendVector<RealPos>()       );
+        addFunction( new Func_appendVector<RlString>()      );
+        addFunction( new Func_appendVector<RlBoolean>()     );
         addFunction( new Func_clear()                       );
         addFunction( new Func_exists()                      );
         addFunction( new Func_getwd()                       );
         addFunction( new Func_getOption()                   );
+        addFunction( new Func_help()                        );
         addFunction( new Func_ifelse<Natural>()             );
         addFunction( new Func_ifelse<Integer>()             );
         addFunction( new Func_ifelse<Real>()                );

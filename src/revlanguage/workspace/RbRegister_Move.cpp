@@ -52,11 +52,14 @@
 #include "RlMove.h"
 
 /* Moves on real values */
+#include "Move_Mirror.h"
+#include "Move_MirrorMultiplier.h"
 #include "Move_HSRFHyperpriorsGibbs.h"
 #include "Move_HSRFUnevenGridHyperpriorsGibbs.h"
 #include "Move_SliceSampling.h"
 #include "Move_Scale.h"
 #include "Move_GammaScale.h"
+#include "Move_RandomDive.h"
 #include "Move_ScaleBactrian.h"
 #include "Move_ScaleBactrianCauchy.h"
 #include "Move_Slide.h"
@@ -66,6 +69,7 @@
 #include "Move_BetaProbability.h"
 
 /* Compound Moves on Real Values */
+#include "Move_AVMVN.h"
 #include "Move_UpDownSlide.h"
 #include "Move_UpDownSlideBactrian.h"
 #include "Move_UpDownTreeScale.h"
@@ -87,7 +91,10 @@
 #include "Move_ElementScale.h"
 #include "Move_ElementSlide.h"
 #include "Move_GMRFHyperpriorGibbs.h"
+#include "Move_GMRFUnevenGridHyperpriorGibbs.h"
+#include "Move_MultipleElementScale.h"
 #include "Move_ShrinkExpand.h"
+#include "Move_ShrinkExpandScale.h"
 #include "Move_SingleElementScale.h"
 #include "Move_SingleElementSlide.h"
 #include "Move_EllipticalSliceSamplingLognormalIID.h"
@@ -158,10 +165,15 @@
 #include "Move_EventTimeSlide.h"
 #include "Move_GibbsDrawCharacterHistory.h"
 
+#include "Move_MultiValueEventBirthDeath.h"
+#include "Move_MultiValueEventScale.h"
+#include "Move_MultiValueEventSlide.h"
+
 /* Moves on continuous phyloprocesses (Brownian, multivariate Brownian, etc) */
 
 /* Tree proposals (in folder "datatypes/inference/moves/tree") */
 #include "Move_AddRemoveTip.h"
+#include "Move_BurstEvent.h"
 #include "Move_BranchLengthScale.h"
 #include "Move_CollapseExpandFossilBranch.h"
 #include "Move_IndependentTopology.h"
@@ -176,6 +188,8 @@
 #include "Move_NodeRateTimeSlideUniform.h"
 #include "Move_NodeTimeScale.h"
 #include "Move_NodeTimeSlideUniform.h"
+#include "Move_NodeTimeSlideUniformAgeConstrained.h"
+#include "Move_NodeTimeSlidePathTruncatedNormal.h"
 #include "Move_NodeTimeSlideBeta.h"
 #include "Move_RateAgeBetaShift.h"
 #include "Move_RootTimeScaleBactrian.h"
@@ -206,19 +220,24 @@ void RevLanguage::Workspace::initializeMoveGlobalWorkspace(void)
         /* Regular moves (in folder "datatypes/inference/moves") (grouped by parameter type) */
 
         /* Moves on real values */
+        addTypeWithConstructor( new Move_Mirror() );
+        addTypeWithConstructor( new Move_MirrorMultiplier() );
         addTypeWithConstructor( new Move_Scale() );
         addTypeWithConstructor( new Move_GammaScale() );
+        addTypeWithConstructor( new Move_RandomDive() );
         addTypeWithConstructor( new Move_ScaleBactrian() );
         addTypeWithConstructor( new Move_ScaleBactrianCauchy() );
         addTypeWithConstructor( new Move_Slide() );
         addTypeWithConstructor( new Move_SlideBactrian() );
         addTypeWithConstructor( new Move_SliceSampling() );
         addTypeWithConstructor( new Move_GMRFHyperpriorGibbs() );
+        addTypeWithConstructor( new Move_GMRFUnevenGridHyperpriorGibbs() );
         /* Moves on probability */
         addTypeWithConstructor( new Move_BetaProbability() );
 
         /* compound moves */
 //        addTypeWithConstructor("mvUpDownScale",         new Move_UpDownScale() );
+        addTypeWithConstructor( new Move_AVMVN() );
         addTypeWithConstructor( new Move_UpDownTreeScale() );
         addTypeWithConstructor( new Move_UpDownSlide() );
         addTypeWithConstructor( new Move_UpDownSlideBactrian() );
@@ -238,11 +257,13 @@ void RevLanguage::Workspace::initializeMoveGlobalWorkspace(void)
         addTypeWithConstructor( new Move_ElementSwapSimplex() );
 
         /* Moves on vectors */
+        addTypeWithConstructor( new Move_MultipleElementScale() );
         addTypeWithConstructor( new Move_HSRFHyperpriorsGibbs() );
         addTypeWithConstructor( new Move_HSRFUnevenGridHyperpriorsGibbs() );
         addTypeWithConstructor( new Move_SingleElementSlide() );
         addTypeWithConstructor( new Move_SingleElementScale() );
         addTypeWithConstructor( new Move_ShrinkExpand() );
+        addTypeWithConstructor( new Move_ShrinkExpandScale() );
         addTypeWithConstructor( new Move_VectorBinarySwitch() );
         addTypeWithConstructor( new Move_VectorScale() );
         addTypeWithConstructor( new Move_VectorSlide() );
@@ -281,7 +302,7 @@ void RevLanguage::Workspace::initializeMoveGlobalWorkspace(void)
         addTypeWithConstructor( new Move_GraphFlipEdge() );
         addTypeWithConstructor( new Move_GraphFlipClique() );
         addTypeWithConstructor( new Move_GraphShiftEdge() );
-        
+
         /* Moves on continuous character data (matrices of real values) */
         addTypeWithConstructor( new Move_ContinuousCharacterDataSlide() );
 
@@ -323,6 +344,11 @@ void RevLanguage::Workspace::initializeMoveGlobalWorkspace(void)
         addTypeWithConstructor( new Move_ReversibleJumpSwitch<Simplex>( )               );
         addTypeWithConstructor( new Move_ReversibleJumpSwitch<ModelVector<Natural> >( ) );
         addTypeWithConstructor( new Move_ReversibleJumpSwitch<Tree>( )                  );
+        
+        addTypeWithConstructor( new Move_MultiValueEventBirthDeath()                    );
+        addTypeWithConstructor( new Move_MultiValueEventScale()                         );
+        addTypeWithConstructor( new Move_MultiValueEventSlide()                         );
+
 
 
         addTypeWithConstructor( new Move_BirthDeathEventContinuous()                    );
@@ -336,6 +362,7 @@ void RevLanguage::Workspace::initializeMoveGlobalWorkspace(void)
 
         /* Tree proposals (in folder "datatypes/inference/moves/tree") */
         addTypeWithConstructor( new Move_AddRemoveTip()                     );
+        addTypeWithConstructor( new Move_BurstEvent()                       );
         addTypeWithConstructor( new Move_BranchLengthScale()                );
         addTypeWithConstructor( new Move_CollapseExpandFossilBranch()       );
         addTypeWithConstructor( new Move_IndependentTopology()              );
@@ -348,7 +375,9 @@ void RevLanguage::Workspace::initializeMoveGlobalWorkspace(void)
         addTypeWithConstructor( new Move_NNINonclock()                      );
         addTypeWithConstructor( new Move_NodeRateTimeSlideUniform()         );
         addTypeWithConstructor( new Move_NodeTimeScale()                    );
+        addTypeWithConstructor( new Move_NodeTimeSlidePathTruncatedNormal() );
         addTypeWithConstructor( new Move_NodeTimeSlideUniform()             );
+        addTypeWithConstructor( new Move_NodeTimeSlideUniformAgeConstrained());
         addTypeWithConstructor( new Move_NodeTimeSlideBeta()                );
         addTypeWithConstructor( new Move_RateAgeBetaShift()                 );
         addTypeWithConstructor( new Move_RootTimeScaleBactrian()            );

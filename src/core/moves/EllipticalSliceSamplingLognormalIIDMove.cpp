@@ -103,6 +103,13 @@ const std::string& EllipticalSliceSamplingLognormalIIDMove::getMoveName( void ) 
     return name;
 }
 
+
+double EllipticalSliceSamplingLognormalIIDMove::getMoveTuningParameter( void ) const
+{
+    return window;
+}
+
+
 //double unif()
 //{
 //    RandomNumberGenerator* rng     = GLOBAL_RNG;
@@ -115,7 +122,6 @@ class slice_function
 {
   std::vector<StochasticNode<double> *> variables;
   double lHeat;
-  double pHeat;
   RbOrderedSet<DagNode*> affectedNodes;
   int num_evals;
 
@@ -141,7 +147,7 @@ public:
     }
     
       // 3. exponentiate with the chain heat
-    double lnPosterior = pHeat * (lHeat * lnLikelihood + lnPrior);
+    double lnPosterior = lHeat * lnLikelihood + lnPrior;
 
     return lnPosterior;
   }
@@ -184,24 +190,28 @@ public:
       return vals;
   }
 
-    slice_function(std::vector<StochasticNode<double> *> n, double l, double p)
+    slice_function(std::vector<StochasticNode<double> *> n, double l)
     :variables(n),
      lHeat(l),
-     pHeat(p),
      num_evals(0)
   {
       for (std::vector< StochasticNode<double> *>::const_iterator it = variables.begin(); it != variables.end(); it++)
       {
-          (*it)->getAffectedNodes( affectedNodes );
+          (*it)->initiateGetAffectedNodes( affectedNodes );
       }
   }
 };
 
 
-void EllipticalSliceSamplingLognormalIIDMove::performMcmcMove( double lHeat, double pHeat )
+void EllipticalSliceSamplingLognormalIIDMove::performMcmcMove( double prHeat, double lHeat, double pHeat )
 {
 
-    slice_function lnL(variables, lHeat, pHeat);
+    if ( prHeat != 1 || pHeat != 1)
+    {
+        throw(RbException("Elliptical slice sampling moves are invalid with heated priors or posteriors."));
+    }
+
+    slice_function lnL(variables, lHeat);
 
     double mean = mu->getValue();
     double sd = sigma->getValue();
@@ -286,7 +296,7 @@ void EllipticalSliceSamplingLognormalIIDMove::performMcmcMove( double lHeat, dou
  *
  * \param[in]     o     The stream to which we print the summary.
  */
-void EllipticalSliceSamplingLognormalIIDMove::printSummary(std::ostream &o) const 
+void EllipticalSliceSamplingLognormalIIDMove::printSummary(std::ostream &o, bool current_period) const 
 {
     std::streamsize previousPrecision = o.precision();
     std::ios_base::fmtflags previousFlags = o.flags();
@@ -332,13 +342,13 @@ void EllipticalSliceSamplingLognormalIIDMove::printSummary(std::ostream &o) cons
     
     // print the average distance moved
     o<<"\n";
-    if (num_tried_total > 0)
+    if (num_tried_current_period > 0)
     {
       o<<"  Ave. cos(angle(x1,x2)) = "<<total_movement/num_tried_current_period<<std::endl;
     }
 
     // print the average distance moved
-    if (num_tried_total > 0)
+    if (num_tried_current_period > 0)
     {
       o<<"  Ave. # of Pr evals = "<<double(numPr)/num_tried_current_period<<std::endl;
     }
@@ -398,6 +408,12 @@ void EllipticalSliceSamplingLognormalIIDMove::swapNodeInternal(DagNode *oldN, Da
 }
 
 
+void EllipticalSliceSamplingLognormalIIDMove::setMoveTuningParameter(double tp)
+{
+    window = tp;
+}
+
+
 /**
  * Tune the move to accept the desired acceptance ratio.
  * We only compute the acceptance ratio here and delegate the call to the proposal.
@@ -405,10 +421,13 @@ void EllipticalSliceSamplingLognormalIIDMove::swapNodeInternal(DagNode *oldN, Da
 void EllipticalSliceSamplingLognormalIIDMove::tune( void ) 
 {
 
-    double predicted_window = 4.0*total_movement/num_tried_current_period;
-    
-    double p = exp(-double(num_tried_current_period)*0.5);
-    window = p*window + (1.0-p)*predicted_window;
+    if ( num_tried_current_period > 2 )
+    {
+        double predicted_window = 4.0*total_movement/num_tried_current_period;
+        
+        double p = exp(-double(num_tried_current_period)*0.5);
+        window = p*window + (1.0-p)*predicted_window;
+    }
 
 }
 

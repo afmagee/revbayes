@@ -37,12 +37,14 @@ namespace RevLanguage {
         
         RevPtr<const RevVariable>                       tree;
         RevPtr<const RevVariable>                       q;
+        RevPtr<const RevVariable>                       clado_probs;
         RevPtr<const RevVariable>                       rate;
         RevPtr<const RevVariable>                       siteRates;
         RevPtr<const RevVariable>                       rootFrequencies;
         RevPtr<const RevVariable>                       pInv;
         RevPtr<const RevVariable>                       nSites;
         RevPtr<const RevVariable>                       type;
+        RevPtr<const RevVariable>                       storeInternalNodes;
         RevPtr<const RevVariable>                       treatAmbiguousAsGap;
         RevPtr<const RevVariable>                       coding;
         

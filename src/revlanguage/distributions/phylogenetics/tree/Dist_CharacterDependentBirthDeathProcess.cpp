@@ -92,23 +92,65 @@ RevBayesCore::TypedDistribution<RevBayesCore::Tree>* Dist_CharacterDependentBirt
     
     // condition
     const std::string& cond                  = static_cast<const RlString &>( condition->getRevObject() ).getValue();
+   
+    // condition for simulating under
+    const std::string& simulate_cond                  = static_cast<const RlString &>( simulation_condition->getRevObject() ).getValue();
     
-    size_t ml = static_cast<const Integer &>( max_lineages->getRevObject() ).getValue();
+    bool cond_tip_states = false;
+    bool cond_num_tips = false;
+    bool cond_tree = false;
+    if (simulate_cond == "tipStates")
+    {
+        cond_tip_states = true;
+    }
+    else if (simulate_cond == "numTips")
+    {
+        cond_num_tips = true;
+    }
+    else if (simulate_cond == "tree")
+    {
+        cond_tree = true;
+    }
+    
+    size_t max_l = static_cast<const Integer &>( max_lineages->getRevObject() ).getValue();
+    size_t min_l = static_cast<const Integer &>( min_lineages->getRevObject() ).getValue();
+    size_t exact_l = static_cast<const Integer &>( exact_lineages->getRevObject() ).getValue();
+    double max_t = static_cast<const RealPos &>( max_time->getRevObject() ).getValue();
     
     size_t prune = static_cast<const RlBoolean &>( prune_extinct_lineages->getRevObject() ).getValue();
     
+    
     // finally make the distribution 
-    RevBayesCore::StateDependentSpeciationExtinctionProcess*   d = new RevBayesCore::StateDependentSpeciationExtinctionProcess( ra, ex, q, r, bf, rh, cond, uo, ml, prune );
+    RevBayesCore::StateDependentSpeciationExtinctionProcess*   d = new RevBayesCore::StateDependentSpeciationExtinctionProcess( ra, ex, q, r, bf, rh, cond, uo, min_l, max_l, exact_l, max_t, prune, cond_tip_states, cond_num_tips, cond_tree );
    
+    
+    size_t ex_size = ex->getValue().size();
+    size_t q_size = q->getValue().size();
+    size_t sp_size = 0;
+    
     // set speciation/cladogenetic event rates
     if (speciation_rates->getRevObject().isType( ModelVector<RealPos>::getClassTypeSpec() ))
     {
         d->setSpeciationRates( sp );
+        sp_size = sp->getValue().size();
     }
     else if (speciation_rates->getRevObject().isType( CladogeneticSpeciationRateMatrix::getClassTypeSpec() ))
     {
         d->setCladogenesisMatrix( cp );
+        sp_size = cp->getValue().getNumberOfStates();
     } 
+
+    std::stringstream ss_err;
+    if (ex_size != q_size) {
+        ss_err << "State count mismatch between extinction rates (" << ex_size << ") and Q (" << q_size << ")";
+        throw RbException(ss_err.str());
+    } if (ex_size != sp_size) {
+        ss_err << "State count mismatch between extinction rates (" << ex_size << ") and speciation rates (" << sp_size << ")";
+        throw RbException(ss_err.str());
+    } if (q_size != sp_size) {
+        ss_err << "State count mismatch between speciation rates (" << sp_size << ") and Q (" << q_size << ")";
+        throw RbException(ss_err.str());
+    }
     
     // set the number of time slices for the numeric ODE
     double n = static_cast<const RealPos &>( num_time_slices->getRevObject() ).getValue();
@@ -247,9 +289,18 @@ const MemberRules& Dist_CharacterDependentBirthDeathProcess::getParameterRules(v
         optionsCondition.push_back( "time" );
         optionsCondition.push_back( "survival" );
         memberRules.push_back( new OptionRule( "condition"    , new RlString("time"), optionsCondition, "The condition of the birth-death process." ) );
-        memberRules.push_back( new ArgumentRule( "nTimeSlices",RealPos::getClassTypeSpec(),      "The number of time slices for the numeric ODE.",           ArgumentRule::BY_VALUE                , ArgumentRule::ANY, new RealPos(500.0) ) );
-        memberRules.push_back( new ArgumentRule( "maxNumLineages", Integer::getClassTypeSpec(),  "The number maximum number of lineages to simulate.",       ArgumentRule::BY_VALUE                , ArgumentRule::ANY, new Integer(500) ) );
-        memberRules.push_back( new ArgumentRule( "pruneExtinctLineages", RlBoolean::getClassTypeSpec(),  "When simulating should extinct lineages be pruned off?",       ArgumentRule::BY_VALUE                , ArgumentRule::ANY, new RlBoolean(true) ) );
+        memberRules.push_back( new ArgumentRule("nTimeSlices", RealPos::getClassTypeSpec(), "The number of time slices for the numeric ODE.", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RealPos(500.0) ) );
+        std::vector<std::string> optionsSimulateCondition;
+        optionsSimulateCondition.push_back("startTime");
+        optionsSimulateCondition.push_back("numTips");
+        optionsSimulateCondition.push_back("tipStates");
+        optionsSimulateCondition.push_back("tree");
+        memberRules.push_back( new OptionRule("simulateCondition", new RlString("startTime"), optionsSimulateCondition, "The conditions under which to simulate." ) );
+        memberRules.push_back( new ArgumentRule("minNumLineages", Natural::getClassTypeSpec(), "The minimum number of lineages to simulate; applied under the startTime condition.", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new Natural() ) );
+        memberRules.push_back( new ArgumentRule("maxNumLineages", Natural::getClassTypeSpec(), "The maximum number of lineages to simulate; applied under the startTime condition.", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new Natural(500) ) );
+        memberRules.push_back( new ArgumentRule("exactNumLineages", Natural::getClassTypeSpec(), "The exact number of lineages to simulate; applied under the numTips condition.", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new Natural(100) ) );
+        memberRules.push_back( new ArgumentRule("maxTime", RealPos::getClassTypeSpec(), "Maximum time for lineages to coalesce when simulating; applied under the numTips and tipStates condition.", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RealPos(1000.0) ) );
+        memberRules.push_back( new ArgumentRule("pruneExtinctLineages", RlBoolean::getClassTypeSpec(), "When simulating should extinct lineages be pruned off?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(true) ) );
 
         rules_set = true;
     }
@@ -312,13 +363,29 @@ void Dist_CharacterDependentBirthDeathProcess::setConstParameter(const std::stri
     {
         num_time_slices = var;
     }
+    else if ( name == "minNumLineages" )
+    {
+        min_lineages = var;
+    }
     else if ( name == "maxNumLineages" )
     {
         max_lineages = var;
     }
+    else if ( name == "exactNumLineages" )
+    {
+        exact_lineages = var;
+    }
+    else if ( name == "maxTime" )
+    {
+        max_time = var;
+    }
     else if ( name == "pruneExtinctLineages" )
     {
         prune_extinct_lineages = var;
+    }
+    else if ( name == "simulateCondition" )
+    {
+        simulation_condition = var;
     }
     else
     {

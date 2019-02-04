@@ -93,8 +93,9 @@ RevBayesCore::AbstractBirthDeathProcess* Dist_FBDP::createDistribution( void ) c
     }
 
     bool pa = static_cast<const RlBoolean &>( presence_absence->getRevObject() ).getValue();
+    bool ex = static_cast<const RlBoolean &>( extended->getRevObject() ).getValue();
 
-    RevBayesCore::PiecewiseConstantFossilizedBirthDeathProcess* d = new RevBayesCore::PiecewiseConstantFossilizedBirthDeathProcess(sa, l, m, p, c, r, rt, cond, t, uo, pa);
+    RevBayesCore::PiecewiseConstantFossilizedBirthDeathProcess* d = new RevBayesCore::PiecewiseConstantFossilizedBirthDeathProcess(sa, l, m, p, c, r, rt, cond, t, uo, pa, ex);
 
     return d;
 }
@@ -108,7 +109,7 @@ RevBayesCore::AbstractBirthDeathProcess* Dist_FBDP::createDistribution( void ) c
 const std::string& Dist_FBDP::getClassType( void )
 {
     
-    static std::string rev_type = "Dist_FBDP";
+    static std::string rev_type = "Dist_FBDRP";
     
     return rev_type;
 }
@@ -137,8 +138,7 @@ std::vector<std::string> Dist_FBDP::getDistributionFunctionAliases( void ) const
 {
     // create alternative constructor function names variable that is the same for all instance of this class
     std::vector<std::string> a_names;
-    a_names.push_back( "FBDP" );
-    a_names.push_back( "EFBDP" );
+    a_names.push_back( "FBDRP" );
     
     return a_names;
 }
@@ -154,7 +154,7 @@ std::vector<std::string> Dist_FBDP::getDistributionFunctionAliases( void ) const
 std::string Dist_FBDP::getDistributionFunctionName( void ) const
 {
     // create a distribution name variable that is the same for all instance of this class
-    std::string d_name = "FossilizedBirthDeath";
+    std::string d_name = "FossilizedBirthDeathRange";
     
     return d_name;
 }
@@ -205,7 +205,8 @@ const MemberRules& Dist_FBDP::getParameterRules(void) const
         dist_member_rules.push_back( new OptionRule( "condition", new RlString("time"), optionsCondition, "The condition of the process." ) );
         dist_member_rules.push_back( new ArgumentRule( "taxa"  , ModelVector<Taxon>::getClassTypeSpec(), "The taxa used for initialization.", ArgumentRule::BY_CONSTANT_REFERENCE, ArgumentRule::ANY ) );
         
-        dist_member_rules.push_back( new ArgumentRule( "presence" , RlBoolean::getClassTypeSpec() , "Treat fossil counts as presence absence data?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(false) ) );
+        dist_member_rules.push_back( new ArgumentRule( "binary" , RlBoolean::getClassTypeSpec() , "Treat fossil counts as binary presence/absence data?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(false) ) );
+        dist_member_rules.push_back( new ArgumentRule( "extended" , RlBoolean::getClassTypeSpec() , "Treat tip nodes as extinction events?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(false) ) );
 
         rules_set = true;
     }
@@ -269,9 +270,13 @@ void Dist_FBDP::setConstParameter(const std::string& name, const RevPtr<const Re
     {
         fossil_counts = var;
     }
-    else if ( name == "presence" )
+    else if ( name == "binary" )
     {
         presence_absence = var;
+    }
+    else if ( name == "extended" )
+    {
+        extended = var;
     }
     else
     {

@@ -23,6 +23,7 @@
 #define Tree_H
 
 #include "RbBoolean.h"
+#include "RbVector.h"
 #include "Cloneable.h"
 #include "MemberObject.h"
 #include "Serializable.h"
@@ -75,6 +76,7 @@ namespace RevBayesCore {
         void                                                executeMethod(const std::string &n, const std::vector<const DagNode*> &args, Boolean &rv) const;    //!< Map the member methods to internal function calls
         std::vector<Taxon>                                  getFossilTaxa() const;                                                                              //!< Get all the taxa in the tree
         const TopologyNode&                                 getMrca(const TopologyNode &n) const;
+        TopologyNode&                                       getMrca(const Clade &c);
         const TopologyNode&                                 getMrca(const Clade &c) const;
         const TopologyNode&                                 getMrca(const Clade &c, bool strict) const;
         std::string                                         getNewickRepresentation() const;                                                                    //!< Get the newick representation of this Tree
@@ -112,7 +114,7 @@ namespace RevBayesCore {
         TreeChangeEventHandler&                             getTreeChangeEventHandler(void) const;                                                              //!< Get the change-event handler for this tree
         double                                              getTreeLength(void) const;
         bool                                                hasSameTopology( const Tree &t ) const;                                                             //!< Has this tree the same topology?
-        bool                                                isBinary(void) const;                                                                               //!< Is the Tree rooted
+        bool                                                isBinary(void) const;                                                                               //!< Is the Tree binary
         bool                                                isBroken(void) const;                                                                               //!< Is this tree ultrametric?
         bool                                                isNegativeConstraint(void) const;                                                                   //!< Is this tree used as a negative constraint?
         bool                                                isRooted(void) const;                                                                               //!< Is the Tree rooted
@@ -148,7 +150,6 @@ namespace RevBayesCore {
         // private members
         TopologyNode*                                       root;
         std::vector<TopologyNode*>                          nodes;                                                                  //!< Vector of pointers to all nodes
-        bool                                                binary;                                                                 //!< Is the BranchLengthTree binary?
         bool                                                rooted;
         bool                                                is_negative_constraint;
         size_t                                              num_tips;

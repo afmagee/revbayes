@@ -2,6 +2,7 @@
 #include "AddRemoveTipProposal.h"
 #include "RandomNumberFactory.h"
 #include "RandomNumberGenerator.h"
+#include "RbConstants.h"
 #include "RbException.h"
 #include "TreeUtilities.h"
 #include "TypedDagNode.h"
@@ -74,6 +75,13 @@ const std::string& AddRemoveTipProposal::getProposalName( void ) const
 }
 
 
+double AddRemoveTipProposal::getProposalTuningParameter( void ) const
+{
+    // this proposal has no tuning parameter
+    return RbConstants::Double::nan;
+}
+
+
 /**
  * Perform the proposal.
  *
@@ -125,7 +133,7 @@ double AddRemoveTipProposal::doProposal( void )
     double hr = 0;
     double jacobian = 0;
 
-    bool both = (extinct == extant == true);
+    bool both = extinct and extant;
 
     // pick a random tip node to remove
     if (u < 0.5)
@@ -202,7 +210,7 @@ double AddRemoveTipProposal::addTip(TopologyNode *n)
     // unless lnProbTreeShape is incorrect for all birth death processes
     double hr = 0;
 
-    if ( extinct == extant == true )
+    if ( extinct and extant )
     {
         u = rng->uniform01();
     }
@@ -317,7 +325,7 @@ void AddRemoveTipProposal::prepareProposal( void )
  *
  * \param[in]     o     The stream to which we print the summary.
  */
-void AddRemoveTipProposal::printParameterSummary(std::ostream &o) const
+void AddRemoveTipProposal::printParameterSummary(std::ostream &o, bool name_only) const
 {
     
 }
@@ -388,6 +396,12 @@ void AddRemoveTipProposal::swapNodeInternal(DagNode *oldN, DagNode *newN)
         tau = static_cast<StochasticNode<Tree>* >(newN) ;
     }
     
+}
+
+
+void AddRemoveTipProposal::setProposalTuningParameter(double tp)
+{
+    // this proposal has no tuning parameter: nothing to do
 }
 
 

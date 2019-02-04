@@ -1,6 +1,7 @@
 #include "GibbsPruneAndRegraftProposal.h"
 #include "RandomNumberFactory.h"
 #include "RandomNumberGenerator.h"
+#include "RbConstants.h"
 #include "RbException.h"
 #include "TypedDagNode.h"
 
@@ -92,6 +93,13 @@ const std::string& GibbsPruneAndRegraftProposal::getProposalName( void ) const
 }
 
 
+double GibbsPruneAndRegraftProposal::getProposalTuningParameter( void ) const
+{
+    // this proposal has no tuning parameter
+    return RbConstants::Double::nan;
+}
+
+
 /**
  * Perform the proposal.
  *
@@ -123,7 +131,7 @@ double GibbsPruneAndRegraftProposal::doProposal( void )
     
     // potential affected nodes for likelihood computation
     RbOrderedSet<DagNode *> affected;
-    variable->getAffectedNodes( affected );
+    variable->initiateGetAffectedNodes( affected );
     
     double backwardLikelihood = variable->getLnProbability();
     for (RbOrderedSet<DagNode*>::const_iterator it = affected.begin(); it != affected.end(); ++it)
@@ -246,7 +254,7 @@ void GibbsPruneAndRegraftProposal::prepareProposal( void )
  *
  * \param[in]     o     The stream to which we print the summary.
  */
-void GibbsPruneAndRegraftProposal::printParameterSummary(std::ostream &o) const
+void GibbsPruneAndRegraftProposal::printParameterSummary(std::ostream &o, bool name_only) const
 {
     
     // no parameters
@@ -322,6 +330,12 @@ void GibbsPruneAndRegraftProposal::swapNodeInternal(DagNode *oldN, DagNode *newN
     
     variable = static_cast<StochasticNode<Tree>* >(newN) ;
     
+}
+
+
+void GibbsPruneAndRegraftProposal::setProposalTuningParameter(double tp)
+{
+    // this proposal has no tuning parameter: nothing to do
 }
 
 

@@ -195,32 +195,6 @@ bool AbstractRootedTreeDistribution::isLnProbabilityNonZero(void)
 
 
 /**
- * Get the divergence times meassured since the time of the origin.
- * We get the ages from the nodes and simply subtruct these from the time of the origin.
- *
- * Fills vector of times. The caller needs to deallocate this vector.
- */
-void AbstractRootedTreeDistribution::recomputeDivergenceTimesSinceOrigin( void ) const
-{
-    
-    // get the time of the process
-    double org = process_age->getValue();
-    
-    // retrieved the speciation times
-    divergence_times = std::vector<double>();
-    for (size_t i = 0; i < value->getNumberOfInteriorNodes()+1; ++i)
-    {
-        const TopologyNode& n = value->getInteriorNode( i );
-        double t = org - n.getAge();
-        divergence_times.push_back(t);
-    }
-    
-    // sort the vector of times in ascending order
-    std::sort(divergence_times.begin(), divergence_times.end());
-}
-
-
-/**
  * Compute the diversity of the tree at time t.
  *
  * \param[in]    t      time at which we want to know the diversity.
@@ -252,9 +226,9 @@ int AbstractRootedTreeDistribution::diversity(double t) const
 void AbstractRootedTreeDistribution::getAffected(RbOrderedSet<DagNode *> &affected, RevBayesCore::DagNode *affecter)
 {
     
-    if ( affecter == process_age)
+    if ( affecter == process_age && dag_node != NULL )
     {
-        dag_node->getAffectedNodes( affected );
+        dag_node->initiateGetAffectedNodes( affected );
     }
     
 }
@@ -430,12 +404,60 @@ double AbstractRootedTreeDistribution::lnProbTreeShape(void) const
 
 
 /**
+ * Get the divergence times meassured since the time of the origin.
+ * We get the ages from the nodes and simply subtruct these from the time of the origin.
+ *
+ * Fills vector of times. The caller needs to deallocate this vector.
+ */
+void AbstractRootedTreeDistribution::recomputeDivergenceTimesSinceOrigin( void ) const
+{
+    
+    // get the time of the process
+    double org = process_age->getValue();
+    
+    // retrieved the speciation times
+    divergence_times = std::vector<double>();
+    for (size_t i = 0; i < value->getNumberOfInteriorNodes()+1; ++i)
+    {
+        const TopologyNode& n = value->getInteriorNode( i );
+        double t = org - n.getAge();
+        divergence_times.push_back(t);
+    }
+    
+    // sort the vector of times in ascending order
+    std::sort(divergence_times.begin(), divergence_times.end());
+}
+
+
+/**
  * Redraw the current value. We delegate this to the simulate method.
  */
 void AbstractRootedTreeDistribution::redrawValue( void )
 {
     
     simulateTree();
+    
+}
+
+
+/**
+ * Restore the current value and reset some internal flags.
+ * If the root age variable has been restored, then we need to change the root age of the tree too.
+ */
+void AbstractRootedTreeDistribution::restoreSpecialization(DagNode *affecter)
+{
+    if ( affecter == process_age )
+    {
+        if ( use_origin == false )
+        {
+            value->getRoot().setAge( process_age->getValue() );
+        }
+        
+        if ( dag_node != NULL )
+        {
+            dag_node->restoreAffected();
+        }
+    }
     
 }
 
@@ -460,10 +482,11 @@ void AbstractRootedTreeDistribution::simulateClade(std::vector<TopologyNode *> &
         }
 
     }
-
+    
     std::vector<double> ages;
     while ( n.size() > 2 && current_age < age )
     {
+
 
         // get all the nodes before the current age
         std::vector<TopologyNode*> active_nodes;
@@ -537,7 +560,10 @@ void AbstractRootedTreeDistribution::simulateClade(std::vector<TopologyNode *> &
 
         }
         
-        if ( n.size() > 2 && current_age >= age  ) throw RbException("Unexpected number of taxa (remaining #taxa was " + StringUtilities::toString(n.size()) + " and age was " + current_age + " with maximum age of " + age + ") in tree simulation");
+        if ( n.size() > 2 && current_age >= age  )
+        {
+            throw RbException("Unexpected number of taxa (remaining #taxa was " + StringUtilities::toString(n.size()) + " and age was " + current_age + " with maximum age of " + age + ") in tree simulation");
+        }
         
     }
 
@@ -634,8 +660,17 @@ void AbstractRootedTreeDistribution::simulateTree( void )
 
         ra = rng->uniform01() * ( max_age - max_node_age ) + max_node_age;
     }
+    
+    double min_node_age = max_node_age;
+    for (size_t j = 0; j < nodes.size(); ++j)
+    {
+        if ( nodes[j]->getAge() < min_node_age )
+        {
+            min_node_age = nodes[j]->getAge();
+        }
+    }
 
-    simulateClade(nodes, ra, 0.0);
+    simulateClade(nodes, ra, min_node_age);
 
     TopologyNode *root = nodes[0];
 
@@ -646,28 +681,6 @@ void AbstractRootedTreeDistribution::simulateTree( void )
     delete value;
     value = psi;
 
-}
-
-
-/**
- * Restore the current value and reset some internal flags.
- * If the root age variable has been restored, then we need to change the root age of the tree too.
- */
-void AbstractRootedTreeDistribution::restoreSpecialization(DagNode *affecter)
-{
-    if ( affecter == process_age )
-    {
-        if ( use_origin == false )
-        {
-            value->getRoot().setAge( process_age->getValue() );
-        }
-
-        if ( dag_node != NULL )
-        {
-            dag_node->restoreAffected();
-        }
-    }
-    
 }
 
 

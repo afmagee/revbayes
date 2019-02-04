@@ -1,6 +1,7 @@
 #include "FixedNodeheightPruneAndRegraftProposal.h"
 #include "RandomNumberFactory.h"
 #include "RandomNumberGenerator.h"
+#include "RbConstants.h"
 #include "RbException.h"
 #include "TypedDagNode.h"
 
@@ -81,6 +82,13 @@ const std::string& FixedNodeheightPruneAndRegraftProposal::getProposalName( void
 }
 
 
+double FixedNodeheightPruneAndRegraftProposal::getProposalTuningParameter( void ) const
+{
+    // this proposal has no tuning parameter
+    return RbConstants::Double::nan;
+}
+
+
 /**
  * Perform the proposal.
  *
@@ -110,7 +118,7 @@ double FixedNodeheightPruneAndRegraftProposal::doProposal( void )
         return RbConstants::Double::neginf;
     }
     
-    // pick a random node which is not the root and neithor the direct descendant of the root
+    // pick a random node which is neither the root nor the direct descendant of the root
     TopologyNode* node;
     do {
         double u = rng->uniform01();
@@ -147,17 +155,17 @@ double FixedNodeheightPruneAndRegraftProposal::doProposal( void )
     storedNewBrother    = newBro;
     
     // prune
-    grandparent->removeChild( parent );
-    parent->removeChild( brother );
-    grandparent->addChild( brother );
+    storedParentPos = grandparent->removeChild( parent );
+    storedBrotherPos = parent->removeChild( brother );
+    grandparent->addChild( brother, storedParentPos );
     brother->setParent( grandparent );
     
     // regraft
     TopologyNode* newGrandParent = &newBro->getParent();
-    newGrandParent->removeChild( newBro );
-    newGrandParent->addChild( parent );
+    storedNewBrotherPos = newGrandParent->removeChild( newBro );
+    newGrandParent->addChild( parent, storedNewBrotherPos );
     parent->setParent( newGrandParent );
-    parent->addChild( newBro );
+    parent->addChild( newBro, storedBrotherPos );
     newBro->setParent( parent );
     
     return 0.0;
@@ -181,7 +189,7 @@ void FixedNodeheightPruneAndRegraftProposal::prepareProposal( void )
  *
  * \param[in]     o     The stream to which we print the summary.
  */
-void FixedNodeheightPruneAndRegraftProposal::printParameterSummary(std::ostream &o) const
+void FixedNodeheightPruneAndRegraftProposal::printParameterSummary(std::ostream &o, bool name_only) const
 {
     
     // no parameters
@@ -210,15 +218,15 @@ void FixedNodeheightPruneAndRegraftProposal::undoProposal( void )
         // prune
         newGrandparent.removeChild( &parent );
         parent.removeChild( storedNewBrother );
-        newGrandparent.addChild( storedNewBrother );
+        newGrandparent.addChild( storedNewBrother, storedNewBrotherPos );
         storedNewBrother->setParent( &newGrandparent );
         
         
         // regraft
         grandparent.removeChild( storedBrother );
-        parent.addChild( storedBrother );
+        parent.addChild( storedBrother, storedBrotherPos );
         storedBrother->setParent( &parent );
-        grandparent.addChild( &parent );
+        grandparent.addChild( &parent, storedParentPos );
         parent.setParent( &grandparent );
     }
     
@@ -236,6 +244,12 @@ void FixedNodeheightPruneAndRegraftProposal::swapNodeInternal(DagNode *oldN, Dag
     
     variable = static_cast<StochasticNode<Tree>* >(newN) ;
     
+}
+
+
+void FixedNodeheightPruneAndRegraftProposal::setProposalTuningParameter(double tp)
+{
+    // this proposal has no tuning parameter: nothing to do
 }
 
 

@@ -42,8 +42,14 @@ namespace RevBayesCore {
                                                   const TypedDagNode<double> *rh,
                                                   const std::string &cdt,
                                                   bool uo,
-                                                  size_t max_lineages,
-                                                  bool prune);
+                                                  size_t min_num_lineages,
+                                                  size_t max_num_lineages,
+                                                  size_t exact_num_lineages,
+                                                  double max_t,
+                                                  bool prune,
+                                                  bool condition_on_tip_states,
+                                                  bool condition_on_num_tips,
+                                                  bool condition_on_tree);
         
         // pure virtual member functions
         virtual StateDependentSpeciationExtinctionProcess*              clone(void) const;
@@ -53,6 +59,10 @@ namespace RevBayesCore {
         void                                                            fireTreeChangeEvent(const TopologyNode &n, const unsigned& m=0);                                                 //!< The tree has changed and we want to know which part.
         const AbstractHomologousDiscreteCharacterData&                  getCharacterData() const;
         double                                                          getOriginAge(void) const;
+        std::vector<double>                                             getAverageExtinctionRatePerBranch(void) const;
+        std::vector<double>                                             getAverageSpeciationRatePerBranch(void) const;
+        std::vector<long>                                               getNumberOfShiftEventsPerBranch(void) const;
+        std::vector<double>                                             getTimeInStates(void) const;
         double                                                          getRootAge(void) const;
         virtual void                                                    redrawValue(void);
         void                                                            setCladogenesisMatrix(const TypedDagNode< CladogeneticSpeciationRateMatrix > *r);
@@ -64,8 +74,8 @@ namespace RevBayesCore {
         
         void                                                            drawJointConditionalAncestralStates(std::vector<size_t>& startStates, std::vector<size_t>& endStates);
         void                                                            recursivelyDrawJointConditionalAncestralStates(const TopologyNode &node, std::vector<size_t>& startStates, std::vector<size_t>& endStates);
-        void                                                            drawStochasticCharacterMap(std::vector<std::string*>& character_histories);
-        void                                                            recursivelyDrawStochasticCharacterMap(const TopologyNode &node, size_t start_state, std::vector<std::string*>& character_histories);
+        void                                                            drawStochasticCharacterMap(std::vector<std::string*>& character_histories, bool set_amb_char_data = false);
+        void                                                            recursivelyDrawStochasticCharacterMap(const TopologyNode &node, size_t start_state, std::vector<std::string*>& character_histories, bool set_amb_char_data);
         void                                                            numericallyIntegrateProcess(state_type &likelihoods, double begin_age, double end_age, bool use_backward, bool extinction_only) const; //!< Wrapper function for the ODE time stepper function.
         void                                                            resizeVectors(size_t num_nodes);
         
@@ -93,7 +103,8 @@ namespace RevBayesCore {
         std::vector<double>                                             pExtinction(double start, double end) const;                                                        //!< Compute the probability of extinction of the process (without incomplete taxon sampling).
         virtual double                                                  pSurvival(double start, double end) const;                                                          //!< Compute the probability of survival of the process (without incomplete taxon sampling).
         void                                                            recursivelyFlagNodeDirty(const TopologyNode& n);
-        void                                                            simulateTree(void);
+        bool                                                            simulateTree(size_t attempts = 0);
+        bool                                                            simulateTreeConditionedOnTips(size_t attempts = 0);
         std::vector<double>                                             calculateTotalAnageneticRatePerState(void);
         std::vector<double>                                             calculateTotalSpeciationRatePerState(void);
         void                                                            computeNodeProbability(const TopologyNode &n, size_t nIdx) const;
@@ -115,7 +126,8 @@ namespace RevBayesCore {
         bool                                                            sample_character_history;                                                                           //!< are we sampling the character history along branches?
         std::vector<double>                                             average_speciation;
         std::vector<double>                                             average_extinction;
-        std::vector<double>                                             time_in_state;
+        std::vector<long>                                               num_shift_events;
+        std::vector<double>                                             time_in_states;
         std::string                                                     simmap;
         
         // parameters
@@ -130,8 +142,14 @@ namespace RevBayesCore {
         const TypedDagNode<double>*                                     rho;                                                                                                //!< Sampling probability of each species.
         
         RateMatrix_JC                                                   Q_default;
+        size_t                                                          min_num_lineages;
         size_t                                                          max_num_lineages;
+        size_t                                                          exact_num_lineages;
+        double                                                          max_time;
         bool                                                            prune_extinct_lineages;
+        bool                                                            condition_on_tip_states;
+        bool                                                            condition_on_num_tips;
+        bool                                                            condition_on_tree;
         double                                                          NUM_TIME_SLICES;
     };
     

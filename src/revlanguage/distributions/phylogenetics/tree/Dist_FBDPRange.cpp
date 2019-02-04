@@ -99,7 +99,7 @@ RevBayesCore::PiecewiseConstantFossilizedBirthDeathRangeProcess* Dist_FBDPRange:
 const std::string& Dist_FBDPRange::getClassType( void )
 {
     
-    static std::string rev_type = "Dist_FBDPRange";
+    static std::string rev_type = "Dist_FBDRMatrix";
     
     return rev_type;
 }
@@ -128,7 +128,7 @@ std::vector<std::string> Dist_FBDPRange::getDistributionFunctionAliases( void ) 
 {
     // create alternative constructor function names variable that is the same for all instance of this class
     std::vector<std::string> a_names;
-    a_names.push_back( "FBDPRange" );
+    a_names.push_back( "FBDRMatrix" );
     
     return a_names;
 }
@@ -144,7 +144,7 @@ std::vector<std::string> Dist_FBDPRange::getDistributionFunctionAliases( void ) 
 std::string Dist_FBDPRange::getDistributionFunctionName( void ) const
 {
     // create a distribution name variable that is the same for all instance of this class
-    std::string d_name = "FossilizedBirthDeathRange";
+    std::string d_name = "FossilizedBirthDeathRangeMatrix";
     
     return d_name;
 }
@@ -192,7 +192,7 @@ const MemberRules& Dist_FBDPRange::getParameterRules(void) const
         dist_member_rules.push_back( new OptionRule( "condition", new RlString("time"), optionsCondition, "The condition of the process." ) );
         dist_member_rules.push_back( new ArgumentRule( "taxa"  , ModelVector<Taxon>::getClassTypeSpec(), "The taxa with stratigraphic ranges used for initialization.", ArgumentRule::BY_CONSTANT_REFERENCE, ArgumentRule::ANY ) );
         
-        dist_member_rules.push_back( new ArgumentRule( "presence" , RlBoolean::getClassTypeSpec() , "Treat fossil counts as presence absence data?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(false) ) );
+        dist_member_rules.push_back( new ArgumentRule( "binary" , RlBoolean::getClassTypeSpec() , "Treat fossil counts as binary presence/absence data?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(false) ) );
 
         rules_set = true;
     }
@@ -259,7 +259,7 @@ void Dist_FBDPRange::setConstParameter(const std::string& name, const RevPtr<con
     {
         condition = var;
     }
-    else if ( name == "presence" )
+    else if ( name == "binary" )
     {
         presence_absence = var;
     }

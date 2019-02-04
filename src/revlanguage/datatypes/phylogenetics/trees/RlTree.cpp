@@ -1,6 +1,7 @@
 #include "ModelVector.h"
 #include "Natural.h"
 #include "RbUtil.h"
+#include "RlAbstractHomologousDiscreteCharacterData.h"
 #include "RlBoolean.h"
 #include "RlClade.h"
 #include "RlTree.h"
@@ -84,6 +85,23 @@ RevLanguage::RevPtr<RevLanguage::RevVariable> Tree::executeMethod(std::string co
         this->dag_node->getValue().dropTipNodeWithName( taxon_name );
 
         return NULL;
+    }
+    else if (name == "getClade")
+    {
+        found = true;
+        
+        const std::vector<RevBayesCore::Taxon> &taxa = static_cast<const ModelVector<Taxon>&>( args[0].getVariable()->getRevObject() ).getValue();
+        RevBayesCore::Clade tmp = RevBayesCore::Clade( taxa );
+        tmp.resetTaxonBitset( this->dag_node->getValue().getTaxonBitSetMap() );
+        RevBayesCore::Clade c = this->dag_node->getValue().getMrca( tmp ).getClade();
+        return new RevVariable( new Clade( c ) );
+    }
+    else if (name == "isBinary")
+    {
+        found = true;
+
+        bool tf = this->dag_node->getValue().isBinary();
+        return new RevVariable( new RlBoolean( tf ) );
     }
     else if (name == "isInternal")
     {
@@ -191,9 +209,31 @@ RevLanguage::RevPtr<RevLanguage::RevVariable> Tree::executeMethod(std::string co
         RevBayesCore::Tree &tree = dag_node->getValue();
         RevBayesCore::TreeUtilities::makeUltrametric(&tree);
 
-//        tree.makeUltrametric();
-
         return NULL;
+    }
+    else if ( name == "getPSSP" )
+    {
+        found = true;
+        const AbstractHomologousDiscreteCharacterData c = static_cast<const AbstractHomologousDiscreteCharacterData& >( args[0].getVariable()->getRevObject() ).getValue();
+        size_t state_index = static_cast<const Natural&>( args[1].getVariable()->getRevObject() ).getValue();
+        
+        std::vector<double> bl = RevBayesCore::TreeUtilities::getPSSP( dag_node->getValue(), c.getValue(), state_index );
+        ModelVector<RealPos> *n = new ModelVector<RealPos>( bl );
+        return new RevVariable( n );
+    }
+    else if ( name == "calculateEDR" )
+    {
+        found = true;
+        std::vector<double> edr = RevBayesCore::TreeUtilities::calculateEDR( dag_node->getValue() );
+        ModelVector<RealPos> *n = new ModelVector<RealPos>( edr );
+        return new RevVariable( n );
+    }
+    else if ( name == "getInverseES" )
+    {
+        found = true;
+        std::vector<double> es = RevBayesCore::TreeUtilities::getInverseES( dag_node->getValue() );
+        ModelVector<RealPos> *n = new ModelVector<RealPos>( es );
+        return new RevVariable( n );
     }
 
     return ModelObject<RevBayesCore::Tree>::executeMethod( name, args, found );
@@ -209,6 +249,7 @@ const std::string& Tree::getClassType(void)
     return rev_type;
 }
 
+
 /** Get class type spec describing type of object */
 const TypeSpec& Tree::getClassTypeSpec(void)
 {
@@ -217,6 +258,50 @@ const TypeSpec& Tree::getClassTypeSpec(void)
 
     return rev_type_spec;
 }
+
+
+/**
+ * Get the (brief) description for this function
+ */
+std::string Tree::getHelpDescription(void) const
+{
+    std::string description = "";
+    description += "The Tree datatype stores information to describe the shared ancestry";
+    description += "of a taxon set. Information includes taxon labels, topology, node";
+    description += "count, and branch lengths. Tree objects also possess several useful";
+    description += "methods to traverse and manipulate the Tree's value.";
+    
+    return description;
+}
+
+
+
+/**
+ * Get the names of similar and suggested other functions
+ */
+std::vector<std::string> Tree::getHelpSeeAlso(void) const
+{
+    // create an entry for each suggested function
+    std::vector<std::string> see_also;
+    see_also.push_back( "TimeTree" );
+    see_also.push_back( "BranchLengthTree" );
+    
+    
+    return see_also;
+}
+
+
+/**
+ * Get the title of this help entry
+ */
+std::string Tree::getHelpTitle(void) const
+{
+    // create a title variable
+    std::string title = "Tree datatype";
+    
+    return title;
+}
+
 
 
 /** Get type spec */
@@ -234,6 +319,8 @@ const TypeSpec& Tree::getTypeSpec( void ) const
  */
 void Tree::initMethods( void )
 {
+    ArgumentRules* isBinaryArgRules = new ArgumentRules();
+    methods.addFunction( new MemberProcedure( "isBinary", RlBoolean::getClassTypeSpec(), isBinaryArgRules ) );
 
     ArgumentRules* isInternalArgRules = new ArgumentRules();
     isInternalArgRules->push_back( new ArgumentRule( "node", Natural::getClassTypeSpec(), "The index of the node.", ArgumentRule::BY_VALUE, ArgumentRule::ANY ) );
@@ -248,6 +335,44 @@ void Tree::initMethods( void )
 
     ArgumentRules* ntipsArgRules = new ArgumentRules();
     methods.addFunction( new MemberFunction<Tree, Natural>( "ntips", this, ntipsArgRules ) );
+    
+    ArgumentRules* fitchArgRules = new ArgumentRules();
+    fitchArgRules->push_back( new ArgumentRule( "characters", AbstractHomologousDiscreteCharacterData::getClassTypeSpec(), "The character alignment from which to compute the Fitch Score.", ArgumentRule::BY_CONSTANT_REFERENCE, ArgumentRule::ANY ) );
+    methods.addFunction( new MemberFunction<Tree, Natural>( "fitchScore", this, fitchArgRules ) );
+    
+    ArgumentRules* psArgRules = new ArgumentRules();
+    psArgRules->push_back( new ArgumentRule( "characters", AbstractHomologousDiscreteCharacterData::getClassTypeSpec(), "The character alignment to use when computing the Parsimoniously Same State Paths (PSSP).", ArgumentRule::BY_CONSTANT_REFERENCE, ArgumentRule::ANY ) );
+    psArgRules->push_back( new ArgumentRule( "stateIndex", Natural::getClassTypeSpec(), "The state index.", ArgumentRule::BY_VALUE, ArgumentRule::ANY ) );
+    methods.addFunction( new MemberProcedure( "getPSSP", ModelVector<RealPos>::getClassTypeSpec(), psArgRules ) );
+    
+    ArgumentRules* edrArgRules = new ArgumentRules();
+    methods.addFunction( new MemberProcedure( "calculateEDR", ModelVector<RealPos>::getClassTypeSpec(), edrArgRules ) );
+    
+    ArgumentRules* esArgRules = new ArgumentRules();
+    methods.addFunction( new MemberProcedure( "getInverseES", ModelVector<RealPos>::getClassTypeSpec(), esArgRules ) );
+    
+    ArgumentRules* meanInverseESArgRules = new ArgumentRules();
+    meanInverseESArgRules->push_back( new ArgumentRule( "characters", AbstractHomologousDiscreteCharacterData::getClassTypeSpec(), "The character alignment from which to compute the mean inverse ES metric.", ArgumentRule::BY_CONSTANT_REFERENCE, ArgumentRule::ANY ) );
+    meanInverseESArgRules->push_back( new ArgumentRule( "stateIndex", Natural::getClassTypeSpec(), "The state index.", ArgumentRule::BY_VALUE, ArgumentRule::ANY ) );
+    methods.addFunction( new MemberFunction<Tree, RealPos>( "meanInverseES", this, meanInverseESArgRules ) );
+    
+    ArgumentRules* nriArgRules = new ArgumentRules();
+    nriArgRules->push_back( new ArgumentRule( "characters", AbstractHomologousDiscreteCharacterData::getClassTypeSpec(), "The character alignment from which to compute the Mean Phylogenetic Distance.", ArgumentRule::BY_CONSTANT_REFERENCE, ArgumentRule::ANY ) );
+    nriArgRules->push_back( new ArgumentRule( "stateIndex", Natural::getClassTypeSpec(), "The index of the character state.", ArgumentRule::BY_VALUE, ArgumentRule::ANY ) );
+    nriArgRules->push_back( new ArgumentRule( "site", Natural::getClassTypeSpec(), "The index of the site in the alignment.", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new Natural(1) ) );
+    nriArgRules->push_back( new ArgumentRule( "zScore", RlBoolean::getClassTypeSpec(), "Calculate the MPD z-score or the observed MPD?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(true) ) );
+    nriArgRules->push_back( new ArgumentRule( "useBranchLengths", RlBoolean::getClassTypeSpec(), "Should MPD use branch length or nodal distances?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(true) ) );
+    nriArgRules->push_back( new ArgumentRule( "randomizations", Natural::getClassTypeSpec(),  "How many randomizations should be performed when calculating z-score?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new Natural(1000) ) );
+    methods.addFunction( new MemberFunction<Tree, Real>( "calculateMPD", this, nriArgRules ) );
+    
+    ArgumentRules* ntiArgRules = new ArgumentRules();
+    ntiArgRules->push_back( new ArgumentRule( "characters", AbstractHomologousDiscreteCharacterData::getClassTypeSpec(), "The character alignment from which to compute the Mean Nearest Taxon Distance.", ArgumentRule::BY_CONSTANT_REFERENCE, ArgumentRule::ANY ) );
+    ntiArgRules->push_back( new ArgumentRule( "stateIndex", Natural::getClassTypeSpec(), "The index of the character state.", ArgumentRule::BY_VALUE, ArgumentRule::ANY ) );
+    ntiArgRules->push_back( new ArgumentRule( "site", Natural::getClassTypeSpec(), "The index of the site in the alignment.", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new Natural(1) ) );
+    ntiArgRules->push_back( new ArgumentRule( "zScore", RlBoolean::getClassTypeSpec(), "Calculate the MNTD z-score or the observed MNTD?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(true) ) );
+    ntiArgRules->push_back( new ArgumentRule( "useBranchLengths", RlBoolean::getClassTypeSpec(), "Should MNTD use branch length or nodal distances?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new RlBoolean(true) ) );
+    ntiArgRules->push_back( new ArgumentRule( "randomizations", Natural::getClassTypeSpec(),  "How many randomizations should be performed when calculating z-score?", ArgumentRule::BY_VALUE, ArgumentRule::ANY, new Natural(1000) ) );
+    methods.addFunction( new MemberFunction<Tree, Real>( "calculateMNTD", this, ntiArgRules ) );
 
     ArgumentRules* namesArgRules = new ArgumentRules();
     methods.addFunction( new MemberProcedure( "names", ModelVector<RlString>::getClassTypeSpec(), namesArgRules ) );
@@ -298,6 +423,10 @@ void Tree::initMethods( void )
 
     ArgumentRules* makeUltraArgRules = new ArgumentRules();
     methods.addFunction( new MemberProcedure( "makeUltrametric", RlUtils::Void, makeUltraArgRules ) );
+
+    ArgumentRules* get_clade_arg_rules = new ArgumentRules();
+    get_clade_arg_rules->push_back( new ArgumentRule( "clade", ModelVector<Taxon>::getClassTypeSpec(), "Vector of some of the taxa included in the clade.", ArgumentRule::BY_VALUE, ArgumentRule::ANY ) );
+    methods.addFunction( new MemberProcedure( "getClade", Clade::getClassTypeSpec(), get_clade_arg_rules ) );
 
 
     // member functions

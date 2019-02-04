@@ -9,6 +9,8 @@
 #ifndef __RevBayes_development_branch__AbstractCladogenicStateFunction__
 #define __RevBayes_development_branch__AbstractCladogenicStateFunction__
 
+#include "BranchHistory.h"
+#include "CharacterEventDiscrete.h"
 #include "TypedDagNode.h"
 
 #include <vector>
@@ -21,11 +23,19 @@ namespace RevBayesCore {
         
         virtual std::map< std::vector<unsigned>, double >                       getEventMap(double t=0.0) = 0;
         virtual const std::map< std::vector<unsigned>, double >&                getEventMap(double t=0.0) const = 0;
+        virtual double computeDataAugmentedCladogeneticLnProbability( const std::vector<BranchHistory*>& histories,
+                                                                      size_t node_index,
+                                                                      size_t left_index,
+                                                                      size_t right_index ) const { return 0.0; };
+        virtual std::string simulateDataAugmentedCladogeneticState(std::vector<BranchHistory*>& histories,
+                                                            size_t node_index, size_t left_index, size_t right_index) const { return ""; };
 //                std::map< std::vector<unsigned>, double >                       getEventMap(double t=0.0);
 //                const std::map< std::vector<unsigned>, double >&                getEventMap(double t=0.0) const;
 //        virtual std::vector<std::map< std::vector<unsigned>, double > >&        getEventMap(void) = 0;
 //        virtual const std::vector<std::map< std::vector<unsigned>, double > >&  getEventMap(void) const = 0;
         
+	virtual ~AbstractCladogenicStateFunction() {};
+
     protected:
         
         virtual void                                                    swapParameterInternal(const DagNode *oldP, const DagNode *newP) = 0;

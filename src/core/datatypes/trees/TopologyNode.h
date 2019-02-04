@@ -71,7 +71,7 @@ namespace RevBayesCore {
         void                                        addBranchParameter(const std::string &n, const std::string &p);
         void                                        addBranchParameters(const std::string &n, const std::vector<double> &p, bool io);
         void                                        addBranchParameters(const std::string &n, const std::vector<std::string> &p, bool io);
-        void                                        addChild(TopologyNode* c);                                                          //!< Adds a child node
+        void                                        addChild(TopologyNode* c, size_t pos = 0);                                          //!< Adds a child node
         void                                        addNodeParameter(const std::string &n, double p);
         void                                        addNodeParameter(const std::string &n, const std::string &p);
         void                                        addNodeParameters(const std::string &n, const std::vector<double> &p, bool io);
@@ -98,8 +98,10 @@ namespace RevBayesCore {
         Clade                                       getClade(void) const;                                                               //!< Get the clade this node represents
         size_t                                      getIndex(void) const;                                                               //!< Get index of node
         void                                        getIndicesOfNodesInSubtree(bool countTips, std::vector<size_t>* indices) const;                                                               //!< Get index of node
+        std::string                                 getIndividualName() const;                                                             //!< Get the species name for the node
         double                                      getMaxDepth(void) const;                                                            //!< Get the maximum depth from this node (time between this node and most recent tip)
         const std::string&                          getName() const;                                                                    //!< Get name of node
+        TopologyNode*                               getMrca(const Clade &c);
         const TopologyNode*                         getMrca(const Clade &c) const;
         const TopologyNode*                         getMrca(const Clade &c, bool strict) const;
         const TopologyNode*                         getMrca(const TopologyNode &n) const;
@@ -121,6 +123,7 @@ namespace RevBayesCore {
         void                                        getTaxa(std::vector<Taxon> &taxa, RbBitSet &bitset) const;                          //!< Fill the vector of taxa and the taxon bitset
         Taxon&                                      getTaxon();                                                                         //!< Get the taxon for this node
         const Taxon&                                getTaxon() const;                                                                   //!< Get the taxon for this node
+        std::vector<double>                         getTimeInStates();
         double                                      getTmrca(const Clade &c) const;
         double                                      getTmrca(const TopologyNode &n) const;
         double                                      getTmrca(const std::vector<Taxon> &t) const;
@@ -132,18 +135,19 @@ namespace RevBayesCore {
         void                                        makeBifurcating(void);                                                              //!< Make this and all its descendants bifurcating.
         void                                        renameNodeParameter(const std::string &old_name, const std::string &new_name);
         void                                        removeAllChildren(void);                                                            //!< Removes all of the children of the node
-        void                                        removeChild(TopologyNode* c);                                                       //!< Removes a specific child
+        size_t                                      removeChild(TopologyNode* c);                                                       //!< Removes a specific child
         void                                        removeTree(Tree *t);                                                                //!< Removes the tree pointer
         void                                        setAge(double a, bool propagate = true );                                           //!< Set the age of this node (should only be done for tips).
         void                                        setBranchLength(double b, bool flag_dirty=true);                                    //!< Set the length of the branch leading to this node.
         void                                        setIndex(size_t idx);                                                               //!< Set the index of the node
 
         void                                        setName(const std::string& n);                                                      //!< Set the name of this node
-  		void										setNodeType(bool tip, bool root, bool interior); //SK
+  		void										   setNodeType(bool tip, bool root, bool interior); //SK
         void                                        setSampledAncestor(bool tf);                                                        //!< Set if the node is a sampled ancestor
         void                                        setSpeciesName(std::string const &n);                                               //!< Set the species name of this node
         void                                        setTaxon(Taxon const &t);                                                           //!< Set the taxon of this node
         void                                        setTaxonIndices(const TaxonMap &tm);                                                //!< Set the indices of the taxa from the taxon map
+        void                                        setTimeInStates(std::vector<double> t);
         void                                        setTree(Tree *t);                                                                   //!< Sets the tree pointer
         void                                        setParent(TopologyNode* p);                                                         //!< Sets the node's parent
         
@@ -172,6 +176,9 @@ namespace RevBayesCore {
         // information for newick representation
         std::vector<std::string>                    node_comments;
         std::vector<std::string>                    branch_comments;
+       
+        // for stochastic maps
+        std::vector<double>                         time_in_states;
         
 //        RevLanguage::RevPtr<TaxonMap>               taxon_map;
         

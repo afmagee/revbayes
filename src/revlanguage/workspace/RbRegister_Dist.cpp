@@ -122,13 +122,16 @@
 /* Tree priors (in folder "distributions/phylogenetics/tree") */
 #include "Dist_bdp.h"
 #include "Dist_bdp_complete.h"
+#include "Dist_BirthDeathBurstProcess.h"
 #include "Dist_CharacterDependentBirthDeathProcess.h"
 #include "Dist_Coalescent.h"
 #include "Dist_CoalescentSkyline.h"
 #include "Dist_conditionedBirthDeathShiftProcessContinuous.h"
 #include "Dist_ConstrainedTopology.h"
+#include "Dist_ConstrainedNodeAge.h"
 #include "Dist_ConstrainedNodeOrder.h"
 #include "Dist_WeightedConstrainedNodeOrder.h"
+#include "Dist_DuplicationLoss.h"
 #include "Dist_FBDP.h"
 #include "Dist_FBDPRange.h"
 #include "Dist_constPopMultispCoal.h"
@@ -144,6 +147,7 @@
 #include "Dist_phyloDistanceGamma.h"
 #include "Dist_sampledSpeciationBirthDeathProcess.h"
 #include "Dist_SSBDP.h"
+#include "Dist_TimeVaryingStateDependentSpeciationExtinctionProcess.h"
 #include "Dist_UltrametricTree.h"
 #include "Dist_uniformTimeTree.h"
 #include "Dist_uniformTopology.h"
@@ -155,6 +159,7 @@
 #include "Dist_bimodalLnorm.h"
 #include "Dist_bimodalNorm.h"
 #include "Dist_binomial.h"
+#include "Dist_bivariatePoisson.h"
 #include "Dist_categorical.h"
 #include "Dist_Cauchy.h"
 #include "Dist_chisq.h"
@@ -205,6 +210,7 @@
 #include "Dist_dpp.h"
 #include "Dist_event.h"
 #include "Dist_mixture.h"
+#include "Dist_MultiValueEvent.h"
 #include "Dist_reversibleJumpMixtureConstant.h"
 #include "Dist_upp.h"
 
@@ -276,13 +282,16 @@ void RevLanguage::Workspace::initializeDistGlobalWorkspace(void)
         // constant rate birth-death process
         AddDistribution< TimeTree                   >( new Dist_bdp());
         AddDistribution< TimeTree                   >( new Dist_bdp_complete());
+        
+        AddDistribution< TimeTree                   >( new Dist_BirthDeathBurstProcess());
 
         AddDistribution< TimeTree                   >( new Dist_CharacterDependentBirthDeathProcess() );
         AddDistribution< TimeTree                   >( new Dist_heterogeneousRateBirthDeath() );
         AddDistribution< TimeTree                   >( new Dist_conditionedBirthDeathShiftProcessContinuous() );
         AddDistribution< TimeTree                   >( new Dist_outgroupBirthDeath() );
         AddDistribution< TimeTree                   >( new Dist_sampledSpeciationBirthDeathProcess() );
-        
+        AddDistribution< TimeTree                   >( new Dist_TimeVaryingStateDependentSpeciationExtinctionProcess() );
+
         
         // fossilized-birth-death process
         AddDistribution< TimeTree                   >( new Dist_FBDP());
@@ -309,11 +318,17 @@ void RevLanguage::Workspace::initializeDistGlobalWorkspace(void)
 //        // heterochronously sampled coalescent (skyline population sizes)
         AddDistribution< TimeTree                   >( new Dist_HeterochronousCoalescentSkyline() );
         
+        // duplication loss process
+        AddDistribution< TimeTree                   >( new Dist_DuplicationLoss() );
+        
         // multispecies coalescent (per branch constant population sizes)
         AddDistribution< TimeTree                   >( new Dist_constPopMultispCoal() );
         AddDistribution< TimeTree                   >( new Dist_multispeciesCoalescentInverseGammaPrior() );
         AddDistribution< TimeTree                   >( new Dist_multispeciesCoalescentUniformPrior() );
         
+        // constrained node age distribution
+        AddDistribution< TimeTree                   >( new Dist_ConstrainedNodeAge() );
+
         // constrained node order distribution
         AddDistribution< TimeTree                   >( new Dist_ConstrainedNodeOrder() );
 
@@ -349,6 +364,9 @@ void RevLanguage::Workspace::initializeDistGlobalWorkspace(void)
 
         // binomial distribution
         AddDistribution< Natural                    >( new Dist_binomial() );
+
+        // bivariate poisson distribution
+        AddDistribution< ModelVector<Natural>       >( new Dist_bivariatePoisson() );
 
         // negative binomial distribution
         AddDistribution< Natural                    >( new Dist_nbinomial() );
@@ -486,6 +504,7 @@ void RevLanguage::Workspace::initializeDistGlobalWorkspace(void)
         AddDistribution< ModelVector<Natural>       >( new Dist_event<Natural>()      );
         AddDistribution< ModelVector<Integer>       >( new Dist_event<Integer>()      );
         AddDistribution< ModelVector<Probability>   >( new Dist_event<Probability>()  );
+        AddDistribution< MultiValueEvent            >( new Dist_MultiValueEvent()     );
 		
         // uniform partitions prior
         AddDistribution< ModelVector<RealPos>       >( new Dist_upp<RealPos>() );

@@ -2,6 +2,7 @@
 #include "NodeTimeSlideWeightedProposal.h"
 #include "RandomNumberFactory.h"
 #include "RandomNumberGenerator.h"
+#include "RbConstants.h"
 #include "RbException.h"
 #include "TreeUtilities.h"
 #include "TypedDagNode.h"
@@ -69,6 +70,13 @@ const std::string& NodeTimeSlideWeightedProposal::getProposalName( void ) const
 }
 
 
+double NodeTimeSlideWeightedProposal::getProposalTuningParameter( void ) const
+{
+    // this proposal has no tuning parameter
+    return RbConstants::Double::nan;
+}
+
+
 /**
  * Perform the proposal.
  *
@@ -117,7 +125,7 @@ double NodeTimeSlideWeightedProposal::doProposal( void )
     std::vector<double> lnl(1,0.0);
     // get the affected dag nodes for the posterior computation
     RbOrderedSet<DagNode*> affected;
-    variable->getAffectedNodes( affected );
+    variable->initiateGetAffectedNodes( affected );
     double f = (parent_age - child_Age);
     double marginal = 0.0;
     double prev_x = 0.0;
@@ -220,7 +228,7 @@ void NodeTimeSlideWeightedProposal::prepareProposal( void )
  *
  * \param[in]     o     The stream to which we print the summary.
  */
-void NodeTimeSlideWeightedProposal::printParameterSummary(std::ostream &o) const
+void NodeTimeSlideWeightedProposal::printParameterSummary(std::ostream &o, bool name_only) const
 {
     
 }
@@ -253,6 +261,12 @@ void NodeTimeSlideWeightedProposal::swapNodeInternal(DagNode *oldN, DagNode *new
     
     variable = static_cast<StochasticNode<Tree>* >(newN) ;
     
+}
+
+
+void NodeTimeSlideWeightedProposal::setProposalTuningParameter(double tp)
+{
+    // this proposal has no tuning parameter: nothing to do
 }
 
 

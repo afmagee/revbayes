@@ -33,8 +33,16 @@ namespace RevBayesCore {
         
         // public member functions
         DECCladogeneticStateFunction*                           clone(void) const;                                                              //!< Create an independent clone
+        virtual double computeDataAugmentedCladogeneticLnProbability( const std::vector<BranchHistory*>& histories,
+                                                                     size_t node_index,
+                                                                     size_t left_index,
+                                                                     size_t right_index ) const;
+        virtual std::string simulateDataAugmentedCladogeneticState(std::vector<BranchHistory*>& histories,
+                                                            size_t node_index, size_t left_index, size_t right_index) const;
+
         std::map< std::vector<unsigned>, double >               getEventMap(double t=0.0);
         const std::map< std::vector<unsigned>, double >&        getEventMap(double t=0.0) const;
+        const std::vector<std::string>&                         getEventTypes(void) const;
         void                                                    update(void);
         
     protected:
