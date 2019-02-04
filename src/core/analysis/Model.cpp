@@ -16,10 +16,10 @@ using namespace RevBayesCore;
  */
 Model::Model(const DagNode *source) : Parallelizable()
 {
-    
+
     // add this node to the source nodes and build model graph
     addSourceNode( source );
-    
+
 }
 
 
@@ -32,46 +32,46 @@ Model::Model(const DagNode *source) : Parallelizable()
  * \param[in]    s    The set of DAG nodes from which the model graph is extracted.
  */
 Model::Model(const std::set<const DagNode*> &s) : Parallelizable(),
-    sources() 
+    sources()
 {
-    
+
     // iterate over all sources
-    for (std::set<const DagNode*>::const_iterator it = s.begin(); it != s.end(); ++it) 
+    for (std::set<const DagNode*>::const_iterator it = s.begin(); it != s.end(); ++it)
     {
         // add this node and build model graph
         addSourceNode( *it );
     }
-    
+
 }
 
 
 /**
- * Copy constructor. We instantiate the model from the previously stored source nodes. 
+ * Copy constructor. We instantiate the model from the previously stored source nodes.
  *
  * \param[in]    m    The model object to copy.
  */
 Model::Model(const Model &m) : Parallelizable(m),
     sources()
 {
-    
+
     // iterate over all sources
     for (std::vector<const DagNode*>::const_iterator it = m.sources.begin(); it != m.sources.end(); ++it)
     {
         // add this node and build model graph
         addSourceNode( *it );
     }
-    
+
 }
 
 /**
  * Destructor.
  * We have created new copied of the DAG nodes so we need to delete these here again.
  */
-Model::~Model( void ) 
+Model::~Model( void )
 {
-    
+
     // delete each DAG node from the copied model graph.
-    for (std::vector<DagNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it) 
+    for (std::vector<DagNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
     {
         DagNode *the_node = *it;
         if ( the_node->decrementReferenceCount() == 0 )
@@ -79,20 +79,20 @@ Model::~Model( void )
             delete the_node;
         }
     }
-    
+
     while ( sources.empty() == false )
     {
         std::vector<const DagNode*>::iterator it = sources.begin();
         const DagNode *the_node = *it;
         sources.erase( it );
-        
+
         if ( the_node->decrementReferenceCount() == 0)
         {
             delete the_node;
         }
-        
+
     }
-    
+
 }
 
 
@@ -109,14 +109,14 @@ Model::~Model( void )
  *
  * \param[in]    x    The model object to copy.
  */
-Model& Model::operator=(const Model &x) 
+Model& Model::operator=(const Model &x)
 {
     Parallelizable::operator=(x);
-    
+
     if ( this != &x )
     {
         // first remove all DAG nodes
-        for (std::vector<DagNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it) 
+        for (std::vector<DagNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
         {
             DagNode *the_node = *it;
             if ( the_node->decrementReferenceCount() == 0 )
@@ -124,20 +124,20 @@ Model& Model::operator=(const Model &x)
                 delete the_node;
             }
         }
-        
+
         // empty the source nodes
         while ( sources.empty() == false )
         {
             std::vector<const DagNode*>::iterator it = sources.begin();
             const DagNode *the_node = *it;
             sources.erase( it );
-            
+
             if ( the_node->decrementReferenceCount() == 0)
             {
                 delete the_node;
             }
         }
-        
+
         // iterate over all sources
         for (std::vector<const DagNode*>::const_iterator it = x.sources.begin(); it != x.sources.end(); ++it)
         {
@@ -145,7 +145,7 @@ Model& Model::operator=(const Model &x)
             addSourceNode( *it );
         }
     }
-    
+
     return *this;
 }
 
@@ -158,74 +158,74 @@ Model& Model::operator=(const Model &x)
  * Then we insert the copied source node in our set of source nodes so that we can use it
  * later to construct the model graph again in the copy constructor.
  * At the same time we fill the nodes map between the pointers of the nodes to the original DAG
- * and the the pointer to the cloned DAG nodes and fill also the vector of DAG nodes contained 
+ * and the the pointer to the cloned DAG nodes and fill also the vector of DAG nodes contained
  * in this model.
- * 
+ *
  *
  * \param[in]    sourceNode    The new source node.
  */
-void Model::addSourceNode(const DagNode *sourceNode) 
+void Model::addSourceNode(const DagNode *sourceNode)
 {
-    
+
     // check that the source node is a valid pointer
     if (sourceNode == NULL)
     {
         throw RbException("Cannot instantiate a model with a NULL DAG node.");
     }
-    
-    
+
+
     // copy the entire graph connected to the source node
     // only if the node is not contained already in the nodesMap will it be copied.
     std::map<std::string, const DagNode* > names;
     sourceNode->cloneDAG(nodesMap, names);
-    
-    
+
+
     // add the source node to our set of sources
     DagNode *theNewSource = nodesMap[sourceNode];
     theNewSource->incrementReferenceCount();
     sources.push_back( theNewSource );
-    
-    
+
+
     // we don't really know which nodes are new in our nodes map.
     // therefore we empty the nodes map and fill it again.
-    for (std::vector<DagNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it) 
+    for (std::vector<DagNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
     {
-        
+
         DagNode *the_node = *it;
         the_node->decrementReferenceCount();
-        
+
     }
     nodes.clear();
-    
+
     // insert new nodes into direct access vector
     std::vector< DagNode* >::iterator i = nodesMap.begin();
-    
+
     while ( i != nodesMap.end() )
     {
         // get the copied node
         DagNode* theNewNode = (*i);
-        
+
         // increment the reference count to the new node
         theNewNode->incrementReferenceCount();
-            
+
         // insert in direct access vector
         nodes.push_back( theNewNode );
 
         // increment the iterator;
         ++i;
     }
-    
+
 }
 
 /**
  * The clone function is a convenience function to create proper copies of inherited objected.
  * E.g. a.clone() will create a clone of the correct type even if 'a' is of derived type 'B'.
  *
- * \return A new copy of myself 
+ * \return A new copy of myself
  */
-Model* Model::clone( void ) const 
+Model* Model::clone( void ) const
 {
-    
+
     return new Model( *this );
 }
 
@@ -235,9 +235,9 @@ Model* Model::clone( void ) const
  *
  * \return Vector of DAG nodes constituting to this model.
  */
-const std::vector<DagNode *>& Model::getDagNodes( void ) const 
+const std::vector<DagNode *>& Model::getDagNodes( void ) const
 {
-    
+
     return nodes;
 }
 
@@ -247,9 +247,9 @@ const std::vector<DagNode *>& Model::getDagNodes( void ) const
  *
  * \return Vector of DAG nodes constituting to this model.
  */
-std::vector<DagNode *>& Model::getDagNodes( void ) 
+std::vector<DagNode *>& Model::getDagNodes( void )
 {
-    
+
     return nodes;
 }
 
@@ -262,7 +262,7 @@ std::vector<DagNode *>& Model::getDagNodes( void )
  */
 const DagNodeMap& Model::getNodesMap( void ) const
 {
-    
+
     return nodesMap;
 }
 
@@ -270,11 +270,11 @@ const DagNodeMap& Model::getNodesMap( void ) const
 
 std::vector<DagNode*> Model::getOrderedStochasticNodes( void )
 {
-    
+
     std::vector<DagNode *> ordered_nodes;
     std::set< const DagNode *> visited;
     getOrderedStochasticNodes(nodes[0], ordered_nodes, visited );
-    
+
     return ordered_nodes;
 }
 
@@ -283,17 +283,17 @@ std::vector<DagNode*> Model::getOrderedStochasticNodes( void )
  */
 void Model::getOrderedStochasticNodes(const DagNode* dagNode,  std::vector<DagNode*>& orderedStochasticNodes, std::set<const DagNode*>& visitedNodes)
 {
-    
+
     if (visitedNodes.find(dagNode) != visitedNodes.end())
     {
         //The node has been visited before
         //we do nothing
         return;
     }
-    
+
     // add myself here for safety reasons
     visitedNodes.insert( dagNode );
-    
+
     if ( dagNode->isConstant() == false )
     {
         // First I have to visit my parents
@@ -303,7 +303,7 @@ void Model::getOrderedStochasticNodes(const DagNode* dagNode,  std::vector<DagNo
         {
             getOrderedStochasticNodes(*it, orderedStochasticNodes, visitedNodes);
         }
-        
+
     }
 
     // Then I can add myself to the nodes visited, and to the ordered vector of stochastic nodes
@@ -319,7 +319,7 @@ void Model::getOrderedStochasticNodes(const DagNode* dagNode,  std::vector<DagNo
     {
         getOrderedStochasticNodes(*it, orderedStochasticNodes, visitedNodes);
     }
-    
+
 }
 
 
@@ -328,46 +328,46 @@ void Model::getOrderedStochasticNodes(const DagNode* dagNode,  std::vector<DagNo
  */
 void Model::setActivePIDSpecialized(size_t a, size_t n)
 {
-    
+
     // delegate the call to each DAG node
     for (std::vector<DagNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
     {
-        
+
         DagNode *the_node = *it;
         the_node->setActivePID(a,n);
-        
+
     }
-    
+
 }
 
 
 std::ostream& RevBayesCore::operator<<(std::ostream& o, const Model& m)
 {
-    
+
     const std::vector<RevBayesCore::DagNode*>& the_nodes = m.getDagNodes();
     std::vector<RevBayesCore::DagNode*>::const_iterator it;
-    
+
     o << std::endl;
     std::stringstream s;
-    
+
     // compute the number of nodes by only counting nodes that are not hidden
     size_t num_nodes = 0;
     for ( it=the_nodes.begin(); it!=the_nodes.end(); ++it )
     {
-        
+
         if ( (*it)->isHidden() == false )
         {
             ++num_nodes;
         }
-        
+
     }
-    
+
     s << "Model with " << num_nodes << " nodes";
     o << s.str() << std::endl;
     for ( size_t i = 0; i < s.str().size(); ++i )
         o << "=";
     o << std::endl << std::endl;
-    
+
     for ( it=the_nodes.begin(); it!=the_nodes.end(); ++it )
     {
         RevBayesCore::DagNode *the_node = *it;
@@ -376,7 +376,7 @@ std::ostream& RevBayesCore::operator<<(std::ostream& o, const Model& m)
         {
             continue;
         }
-        
+
         if ( the_node->getName() != "" )
         {
             o << the_node->getName() <<  " :" << std::endl;
@@ -385,16 +385,16 @@ std::ostream& RevBayesCore::operator<<(std::ostream& o, const Model& m)
         {
             o << "<" << the_node << "> :" << std::endl;
         }
-        
+
         o << "_value        = ";
         std::ostringstream o1;
         the_node->printValue( o1, ", ", true );
         o << StringUtilities::oneLiner( o1.str(), 54 ) << std::endl;
-        
+
         the_node->printStructureInfo( o, false );
-        
+
         o << std::endl;
     }
-    
+
     return o;
 }
