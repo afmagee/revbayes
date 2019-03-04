@@ -234,7 +234,7 @@ void EllipticalSliceSamplingSimpleMove::performMcmcMove( double prHeat, double l
     // Log-likelihood threshold (Murray step 2)
     double L_f = lnL();
 
-    assert(L_f = lnL(f));
+    assert(L_f == lnL(f));
 
     double logy = L_f + log(unif());
 
