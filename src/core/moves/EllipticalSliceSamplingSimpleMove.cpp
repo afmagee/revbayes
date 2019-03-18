@@ -293,11 +293,6 @@ void EllipticalSliceSamplingSimpleMove::performMcmcMove( double prHeat, double l
         // step 5 (step 6 is return value)
         double L_f_prime = lnL(f_prime);
 
-        if ( !(L_f_prime > logy) )
-        {
-            throw(RbException("mvEllipticalSliceSamplingSimple failed in forcing acceptance, something may be wrong."));
-        }
-
       }
       else
       {
